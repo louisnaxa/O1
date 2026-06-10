@@ -87,6 +87,13 @@ jobs:
       - name: Installer les dépendances
         run: pip install -e ".[dev]"
 
+      - name: Diagnostic claude CLI
+        run: |
+          echo "=== version ===" && claude --version
+          echo "=== ping ===" && claude -p "Reply with exactly: PONG" --output-format json --dangerously-skip-permissions
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
       - name: Tests E2E (tuyau complet)
         run: pytest tests/test_pipe_e2e.py -m e2e -v
         env:

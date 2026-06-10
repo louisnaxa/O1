@@ -103,7 +103,6 @@ def _build_agent_prompt(
 def _call_agent(
     prompt: str,
     workdir: str | None = None,
-    max_budget_usd: float = 2.0,
     timeout_s: int = 300,
 ) -> str:
     """
@@ -119,7 +118,7 @@ def _call_agent(
         "claude",
         "-p", prompt,
         "--output-format", "json",
-        "--max-budget-usd", str(max_budget_usd),
+        "--dangerously-skip-permissions",   # requis en CI (pas de TTY)
     ]
 
     cwd = workdir or os.getcwd()
@@ -135,8 +134,10 @@ def _call_agent(
     )
 
     if result.returncode != 0:
+        # L'erreur peut être dans stdout (JSON) ou stderr selon la version du CLI
+        detail = result.stderr.strip() or result.stdout.strip()
         raise RuntimeError(
-            f"claude CLI exit {result.returncode}: {result.stderr.strip()[:400]}"
+            f"claude CLI exit {result.returncode}: {detail[:600]}"
         )
 
     # Tente de parser le JSON ; fallback vers le texte brut
@@ -267,7 +268,7 @@ async def run_pipe(
         # 2. Appel agent
         emit(f"[AGENT →] {prompt[:120]}{'…' if len(prompt) > 120 else ''}")
         try:
-            agent_output = _call_agent(prompt, workdir=workdir, max_budget_usd=max_budget_usd)
+            agent_output = _call_agent(prompt, workdir=workdir)
         except Exception as exc:
             emit(f"[AGENT ERROR] {exc}")
             final_decision = "PAUSE_HUMAN"
