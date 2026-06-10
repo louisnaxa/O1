@@ -12,3 +12,5 @@ venv/
 checkpoints.db
 *.db
 .DS_Store
+scratch/*.py
+scratch/*.pyc
