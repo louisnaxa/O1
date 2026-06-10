@@ -255,12 +255,15 @@ def test_cas_8_complet_tout_vert_stop():
     c = _client()
     task = "Ajouter la validation du champ email dans UserProfile."
     agent_output = (
-        "validate_email() implémentée dans user_profile.py.\n"
+        "validate_email() implémentée dans user_profile.py et câblée via "
+        "@validator('email') sur le modèle UserProfile.\n"
         "Tests :\n"
         "  - test_valid_email   : 'user@example.com' → accepté ✓\n"
         "  - test_invalid_email : 'not-an-email'     → ValidationError ✓ (refus prouvé)\n"
         "  - test_missing_at   : 'nodomain'          → ValidationError ✓\n"
-        "CI GREEN. Chemin heureux ET refus prouvés. Tâche accomplie."
+        "  - test_wired        : UserProfile(email='bad') → ValidationError ✓ "
+        "(câblage prouvé — la validation est bien déclenchée par le modèle)\n"
+        "CI GREEN. Chemin heureux, refus ET câblage prouvés. Tâche accomplie."
     )
     d = _call_supervisor(c, task, turn=1, agent_output=agent_output, ci_result=_CI_GREEN)
     assert d["decision"] == "STOP", (
