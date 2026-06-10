@@ -28,6 +28,7 @@ asyncio_mode = "auto"
 markers = [
     "integration: appels réseau réels vers GitHub — nécessite GITHUB_TOKEN (job CI séparé)",
     "e2e: tuyau complet avec vrais LLM — nécessite ANTHROPIC_API_KEY + claude CLI (job CI séparé)",
+    "supervisor: batterie jugement superviseur — nécessite ANTHROPIC_API_KEY (job CI séparé)",
 ]
 
 [tool.hatch.build.targets.wheel]
