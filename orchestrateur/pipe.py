@@ -57,19 +57,40 @@ _DECISION_TOOL: dict[str, Any] = {
     },
 }
 
-_SUPERVISOR_SYSTEM = """\
-Tu es un superviseur d'agent de codage IA. Évalue la sortie de l'agent et décide :
+_PROCESS_DOC_PATH = Path(__file__).parent.parent / "PROCESS-PRODUCTION-IA.md"
 
-- STOP        : la tâche est terminée de façon satisfaisante
-- CONTINUE    : l'agent a progressé mais n'a pas fini — fournis du feedback ciblé
-- PAUSE_HUMAN : l'agent est bloqué ou boucle — un humain doit intervenir
 
-Règles :
-1. Si CI=GREEN et la tâche est accomplie → STOP.
-2. Si CI=RED → CONTINUE avec feedback sur l'échec.
-3. Si turn >= 8 → préférer STOP ou PAUSE_HUMAN pour éviter la dérive.
-4. Toujours appeler render_decision — jamais de prose seule.
+def _load_supervisor_system() -> str:
+    """
+    Charge PROCESS-PRODUCTION-IA.md comme cerveau du superviseur.
+    Le document encode : §1 séparation des rôles, §2 ordre canonique,
+    §4 table des défaillances, §5 règles PAUSE_HUMAN.
+    """
+    if _PROCESS_DOC_PATH.exists():
+        base = _PROCESS_DOC_PATH.read_text()
+    else:
+        log.warning("PROCESS-PRODUCTION-IA.md introuvable — system prompt dégradé")
+        base = "Tu es un superviseur d'agent de codage IA."
+
+    return base + """
+
+---
+
+## Instructions opérationnelles (superviseur IA)
+
+Tu incarnes le rôle de **Superviseur** défini au §1. À chaque tour :
+
+1. Situe la tâche dans l'ordre canonique §2 : à quelle étape en est-on ?
+2. Consulte la table §4 : quels modes de défaillance l'agent aurait-il pu commettre ?
+3. Applique §5 : faut-il réveiller l'humain (PAUSE_HUMAN) ?
+4. Appelle `render_decision` — jamais de prose seule.
+
+Tu ne codes pas. Tu ne vois pas le repo directement.
+Tu juges sur ce que l'agent rapporte, en compensant l'angle mort §6.
 """
+
+
+_SUPERVISOR_SYSTEM = _load_supervisor_system()
 
 
 # ── Agent subprocess ──────────────────────────────────────────────────────────
@@ -182,7 +203,7 @@ def _call_supervisor(
     )
 
     response = client.messages.create(
-        model="claude-opus-4-6",
+        model="claude-opus-4-8",
         max_tokens=512,
         temperature=0,
         system=_SUPERVISOR_SYSTEM,
