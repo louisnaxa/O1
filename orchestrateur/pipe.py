@@ -135,10 +135,13 @@ def _call_agent(
 
     if result.returncode != 0:
         # L'erreur peut être dans stdout (JSON) ou stderr selon la version du CLI
-        detail = result.stderr.strip() or result.stdout.strip()
-        raise RuntimeError(
-            f"claude CLI exit {result.returncode}: {detail[:600]}"
-        )
+        raw = result.stderr.strip() or result.stdout.strip()
+        try:
+            err_data = json.loads(raw)
+            detail = err_data.get("result") or raw
+        except json.JSONDecodeError:
+            detail = raw
+        raise RuntimeError(f"claude CLI exit {result.returncode}: {detail[:600]}")
 
     # Tente de parser le JSON ; fallback vers le texte brut
     try:
